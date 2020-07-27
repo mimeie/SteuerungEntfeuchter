@@ -26,6 +26,8 @@ namespace SteuerungEntfeuchter.Controllers
         [HttpGet]
         public IEnumerable<WeatherForecast> Get()
         {
+
+            Console.WriteLine("getter");
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {

@@ -31,7 +31,7 @@ namespace SteuerungEntfeuchter.Controllers
             {
                 Date = DateTime.Now.AddDays(index),
                 TemperatureC = rng.Next(-20, 55),
-                Summary = Summaries[rng.Next(Summaries.Length)] + " Entfeuchter Steuerung"
+                Summary = Summaries[rng.Next(Summaries.Length)] + " Machine: " + System.Environment.MachineName
             })
             .ToArray();
         }

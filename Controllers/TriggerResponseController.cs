@@ -22,6 +22,8 @@ namespace SteuerungEntfeuchter.Controllers
         [HttpGet]
         public TriggerResponse Get()
         {
+            SteuerungLogic sl = new SteuerungLogic();
+            sl.Run();
 
             Console.WriteLine("getter");
             return new TriggerResponse

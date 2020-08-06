@@ -81,10 +81,11 @@ namespace SteuerungEntfeuchter
             jsonResult = clusterConn.GetIOBrokerValue(EntfeuchterIstObject);
             Entfeuchter.Status = jsonResult.valBool.Value;
 
+            Console.WriteLine("feuchtigkeit wert: " + KellerSensor.Feuchtigkeit.ToString());
             //feuchtigkeit überprüfen
             if (KellerSensor.Feuchtigkeit > KellerSensor.LimitHigh && KellerSensor.LimitHighTime == DateTime.MinValue)
             {
-                Console.WriteLine("feuchtigkeit zu hoch und über zeitlimit");
+                Console.WriteLine("feuchtigkeit zu hoch und über zeitlimit: " + KellerSensor.Feuchtigkeit.ToString());
                 KellerSensor.LimitHighTime = DateTime.Now;               
                 if (KellerSensor.LimitHighTime.AddHours(KellerSensor.LimitHighDelayHours) > DateTime.Now)
                 {
@@ -92,12 +93,25 @@ namespace SteuerungEntfeuchter
                     Console.WriteLine("Entfeuchter einschalten");
                     clusterConn.SetIOBrokerValue(EntfeuchterZielObject, true);
                 }
+                else
+                {
+                    Console.WriteLine("Entfeuchter nocht nicht einschalten, wegen Zeitlimit: " + KellerSensor.LimitHighTime.AddHours(KellerSensor.LimitHighDelayHours).ToString());
+                }
             }
             else
             {
                 KellerSensor.LimitHighTime = DateTime.MinValue;
-                clusterConn.SetIOBrokerValue(EntfeuchterZielObject, false);
-                Console.WriteLine("Entfeuchter ausschalten");
+                if (Entfeuchter.Status == true)
+                {
+                    Console.WriteLine("Entfeuchter ausschalten");
+                    clusterConn.SetIOBrokerValue(EntfeuchterZielObject, false);
+                }
+                else
+                {
+                    Console.WriteLine("Entfeuchter ist schon aus");
+                }
+
+                
             }
 
         }

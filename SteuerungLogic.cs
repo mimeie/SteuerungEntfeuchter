@@ -6,55 +6,98 @@ using System.Threading.Tasks;
 using System.Net;
 
 using Newtonsoft.Json;
-using JusiJSONHelper;
+using JusiBase;
 //Update-Package
 
 namespace SteuerungEntfeuchter
 {
-    public class SteuerungLogic
+    public sealed class SteuerungLogic
     {
+        private static volatile SteuerungLogic _instance;
+        private static object _syncRoot = new object();
+
         //        http://localhost:60502/api/iobroker/zwave2.0.Node_003.Multilevel_Sensor.humidity
         //        http://iobrokerdatacollector.prod-system.192.168.2.114.xip.io/api/iobroker/zwave2.0.Node_003.Multilevel_Sensor.humidity
-        private static string IOBrokerDataCollectorAddress = "http://iobrokerdatacollector.prod-system.192.168.2.114.xip.io/api/iobroker/";
+        //private static string IOBrokerDataCollectorAddress = "http://iobrokerdatacollector.prod-system.192.168.2.114.xip.io/api/iobroker/";
         private static string KellerHumObject = "zwave2.0.Node_003.Multilevel_Sensor.humidity";
 
+        private static string EntfeuchterIstObject = "zwave2.0.Node_031.Binary_Switch.currentValue";
+        private static string EntfeuchterZielObject = "zwave2.0.Node_031.Binary_Switch.targetValue";
+
+        IOBrokerClusterConnector clusterConn;
+
         public SensorFeuchtigkeit KellerSensor;
+        public Schalter Entfeuchter;
 
-        public SteuerungLogic()
+        private SteuerungLogic()
          {
-            KellerSensor =  new SensorFeuchtigkeit();
-            IOBrokerJSONGet jsonResult = GetIOBrokerValue(KellerHumObject);
-            KellerSensor.LastChange = jsonResult.LastChange;
-            KellerSensor.Feuchtigkeit = jsonResult.valInt;
+            
         }
-      
 
-       private IOBrokerJSONGet GetIOBrokerValue(string objectName)
+        public static SteuerungLogic Instance
         {
-            using (WebClient wc = new WebClient())
+            get
             {
-                IOBrokerJSONGet ioJson = new IOBrokerJSONGet();
+                if (_instance == null)
+                {
+                    lock (_syncRoot)
+                    {
+                        if (_instance == null)
+                        {
+                            _instance = new SteuerungLogic();
+                        }
+                    }
+                }
 
-                string downString = IOBrokerDataCollectorAddress + KellerHumObject;
-                Console.WriteLine("Download String '{0}'", downString);
-
-                var json = wc.DownloadString(downString);
-                ioJson = JsonConvert.DeserializeObject<IOBrokerJSONGet>(json);
-                return ioJson;
+                return _instance;
             }
         }
+
+        public void Start()
+        {
+            clusterConn = new IOBrokerClusterConnector();
+            KellerSensor = new SensorFeuchtigkeit(57,1,55);
+            Entfeuchter = new Schalter();
+            
+        }
+
+        public void Stop()
+        {
+        }
+
+
        
 
-        public void Run()
+        public void Update()
         {
-            //feuchtigkeit überprüfen
-            if (KellerSensor.Feuchtigkeit > 57)
-            {
+            Console.WriteLine("Neue Daten getriggert");
+            //Daten updaten
 
+            IOBrokerJSONGet jsonResult = clusterConn.GetIOBrokerValue(KellerHumObject);
+            KellerSensor.LastChange = jsonResult.LastChange;
+            KellerSensor.Feuchtigkeit = jsonResult.valInt.Value;
+            
+
+            jsonResult = clusterConn.GetIOBrokerValue(EntfeuchterIstObject);
+            Entfeuchter.Status = jsonResult.valBool.Value;
+
+            //feuchtigkeit überprüfen
+            if (KellerSensor.Feuchtigkeit > KellerSensor.LimitHigh && KellerSensor.LimitHighTime == DateTime.MinValue)
+            {
+                Console.WriteLine("feuchtigkeit zu hoch und über zeitlimit");
+                KellerSensor.LimitHighTime = DateTime.Now;               
+                if (KellerSensor.LimitHighTime.AddHours(KellerSensor.LimitHighDelayHours) > DateTime.Now)
+                {
+                    //Entfeuchter einschalten
+                    Console.WriteLine("Entfeuchter einschalten");
+                    clusterConn.SetIOBrokerValue(EntfeuchterZielObject, true);
+                }
             }
             else
             {
-
+                KellerSensor.LimitHighTime = DateTime.MinValue;
+                clusterConn.SetIOBrokerValue(EntfeuchterZielObject, false);
+                Console.WriteLine("Entfeuchter ausschalten");
             }
 
         }

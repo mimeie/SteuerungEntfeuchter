@@ -45,6 +45,8 @@ namespace SteuerungEntfeuchter
             {
                 endpoints.MapControllers();
             });
+
+            SteuerungLogic.Instance.Start();
         }
     }
 }

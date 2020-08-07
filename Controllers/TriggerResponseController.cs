@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
+using JusiBase;
+
 namespace SteuerungEntfeuchter.Controllers
 {
     [ApiController]
@@ -20,16 +22,14 @@ namespace SteuerungEntfeuchter.Controllers
         }
 
         [HttpGet]
-        public TriggerResponse Get()
+        public ResponseTrigger Get()
         {
             SteuerungLogic.Instance.Update();
 
             Console.WriteLine("getter");
-            return new TriggerResponse
+            return new ResponseTrigger
             {
-                ReturnCode = 1,
-                Date = DateTime.Now,
-                Host = System.Environment.MachineName
+                ReturnCode = 1               
             };             
                         
         }

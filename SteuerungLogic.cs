@@ -82,12 +82,13 @@ namespace SteuerungEntfeuchter
             Entfeuchter.Status = jsonResult.valBool.Value;
 
             Console.WriteLine("feuchtigkeit wert: " + KellerSensor.Feuchtigkeit.ToString());
+            Console.WriteLine("limit high time: " + KellerSensor.LimitHighTime.ToString());
             //feuchtigkeit überprüfen
             if (KellerSensor.Feuchtigkeit > KellerSensor.LimitHigh && KellerSensor.LimitHighTime == DateTime.MinValue)
             {
                 Console.WriteLine("feuchtigkeit zu hoch und über zeitlimit: " + KellerSensor.Feuchtigkeit.ToString());
                 KellerSensor.LimitHighTime = DateTime.Now;               
-                if (KellerSensor.LimitHighTime.AddHours(KellerSensor.LimitHighDelayHours) > DateTime.Now)
+                if (KellerSensor.LimitHighTime.AddHours(KellerSensor.LimitHighDelayHours) < DateTime.Now)
                 {
                     //Entfeuchter einschalten
                     Console.WriteLine("Entfeuchter einschalten");

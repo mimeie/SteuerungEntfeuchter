@@ -57,6 +57,8 @@ namespace SteuerungEntfeuchter
         {
             clusterConn = new IOBrokerClusterConnector();
             KellerSensor = new SensorFeuchtigkeit(57,1,55);
+           
+
             Entfeuchter = new Schalter();
             
         }
@@ -81,14 +83,16 @@ namespace SteuerungEntfeuchter
             jsonResult = clusterConn.GetIOBrokerValue(EntfeuchterIstObject);
             Entfeuchter.Status = jsonResult.valBool.Value;
 
-            Console.WriteLine("feuchtigkeit wert: " + KellerSensor.Feuchtigkeit.ToString());
+            Console.WriteLine("feuchtigkeit wert / limit: " + KellerSensor.Feuchtigkeit.ToString() + " - " + KellerSensor.LimitHigh.ToString());
+            Console.WriteLine("aktuelle Zeit / UTC Zeit: " + DateTime.Now.ToString() + " - " + DateTime.UtcNow.ToString());
             Console.WriteLine("limit high time: " + KellerSensor.LimitHighTime.ToString());
             //feuchtigkeit überprüfen
-            if (KellerSensor.Feuchtigkeit > KellerSensor.LimitHigh && KellerSensor.LimitHighTime == DateTime.MinValue)
+            if (KellerSensor.Feuchtigkeit > KellerSensor.LimitHigh )
             {
-                Console.WriteLine("feuchtigkeit zu hoch und über zeitlimit: " + KellerSensor.Feuchtigkeit.ToString());
+                //&& KellerSensor.LimitHighTime == DateTime.MinValue
+                Console.WriteLine("feuchtigkeit zu hoch: " + KellerSensor.Feuchtigkeit.ToString());
                               
-                if (KellerSensor.LimitHighTime.AddHours(KellerSensor.LimitHighDelayHours) < DateTime.Now)
+                if (KellerSensor.LimitHighTime < DateTime.Now && KellerSensor.LimitHighTime != DateTime.MinValue)
                 {
                     //Entfeuchter einschalten
                     Console.WriteLine("Entfeuchter einschalten");
@@ -96,9 +100,11 @@ namespace SteuerungEntfeuchter
                 }
                 else
                 {
-                    KellerSensor.LimitHighTime = DateTime.Now;
+                    if (KellerSensor.LimitHighTime == DateTime.MinValue)
+                    { 
+                        KellerSensor.LimitHighTime = DateTime.Now.AddHours(KellerSensor.LimitHighDelayHours);
+                    }
                     Console.WriteLine("Entfeuchter nocht nicht einschalten, wegen Zeitlimit: " + KellerSensor.LimitHighTime.AddHours(KellerSensor.LimitHighDelayHours).ToString());
-                   
                 }
             }
             else

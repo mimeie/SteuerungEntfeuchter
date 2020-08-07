@@ -87,7 +87,7 @@ namespace SteuerungEntfeuchter
             if (KellerSensor.Feuchtigkeit > KellerSensor.LimitHigh && KellerSensor.LimitHighTime == DateTime.MinValue)
             {
                 Console.WriteLine("feuchtigkeit zu hoch und über zeitlimit: " + KellerSensor.Feuchtigkeit.ToString());
-                KellerSensor.LimitHighTime = DateTime.Now;               
+                              
                 if (KellerSensor.LimitHighTime.AddHours(KellerSensor.LimitHighDelayHours) < DateTime.Now)
                 {
                     //Entfeuchter einschalten
@@ -96,7 +96,9 @@ namespace SteuerungEntfeuchter
                 }
                 else
                 {
+                    KellerSensor.LimitHighTime = DateTime.Now;
                     Console.WriteLine("Entfeuchter nocht nicht einschalten, wegen Zeitlimit: " + KellerSensor.LimitHighTime.AddHours(KellerSensor.LimitHighDelayHours).ToString());
+                   
                 }
             }
             else

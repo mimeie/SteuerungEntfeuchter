@@ -75,13 +75,22 @@ namespace SteuerungEntfeuchter
             Console.WriteLine("Neue Daten getriggert");
             //Daten updaten
 
-            IOBrokerJSONGet jsonResult = clusterConn.GetIOBrokerValue(KellerHumObject);
-            KellerSensor.LastChange = jsonResult.LastChange;
-            KellerSensor.Feuchtigkeit = jsonResult.valInt.Value;
-            
+            IOBrokerJSONGet jsonResultKellerHum = clusterConn.GetIOBrokerValue(KellerHumObject);
+            IOBrokerJSONGet jsonResultEntfeuchter = clusterConn.GetIOBrokerValue(EntfeuchterIstObject);
 
-            jsonResult = clusterConn.GetIOBrokerValue(EntfeuchterIstObject);
-            Entfeuchter.Status = jsonResult.valBool.Value;
+            if (jsonResultKellerHum == null)
+            {
+                return;
+            }
+            if (jsonResultEntfeuchter == null)
+            {
+                return;
+            }
+
+            KellerSensor.LastChange = jsonResultKellerHum.LastChange;
+            KellerSensor.Feuchtigkeit = jsonResultKellerHum.valInt.Value;
+            
+            Entfeuchter.Status = jsonResultEntfeuchter.valBool.Value;
 
             Console.WriteLine("feuchtigkeit wert / limit: " + KellerSensor.Feuchtigkeit.ToString() + " - " + KellerSensor.LimitHigh.ToString());
             Console.WriteLine("aktuelle Zeit / UTC Zeit: " + DateTime.Now.ToString() + " - " + DateTime.UtcNow.ToString());

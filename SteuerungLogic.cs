@@ -13,6 +13,7 @@ namespace SteuerungEntfeuchter
 {
     public sealed class SteuerungLogic
     {
+        //aufruf: http://steuerungentfeuchter.prod.j1/triggerresponse
         private static volatile SteuerungLogic _instance;
         private static object _syncRoot = new object();
 

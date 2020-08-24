@@ -97,10 +97,8 @@ namespace SteuerungEntfeuchter
             {
                 return;
             }
-
-            KellerSensor.LastChange = jsonResultKellerHum.LastChange;
-            KellerSensor.Feuchtigkeit = jsonResultKellerHum.valInt.Value;
-            
+           
+            KellerSensor.Feuchtigkeit = jsonResultKellerHum.valInt.Value;            
             Entfeuchter.Status = jsonResultEntfeuchter.valBool.Value;
 
             Console.WriteLine("feuchtigkeit wert / limit: " + KellerSensor.Feuchtigkeit.ToString() + " - " + KellerSensor.LimitHigh.ToString());

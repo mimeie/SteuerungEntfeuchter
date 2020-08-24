@@ -19,6 +19,13 @@ namespace SteuerungEntfeuchter
             LimitHighDelayHours= _limitHighDelayHours;
             Abschaltlevel = _abschaltlevel;
         }
+        public int CheckIntervallMinutes
+        { 
+            get
+            {
+                return 60;
+            }
+        }
 
     }
 

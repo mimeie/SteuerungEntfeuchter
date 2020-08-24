@@ -16,16 +16,18 @@ namespace SteuerungEntfeuchter
         //aufruf: http://steuerungentfeuchter.prod.j1/triggerresponse
         private static volatile SteuerungLogic _instance;
         private static object _syncRoot = new object();
+        private JobManager _jobManager;
 
         //        http://localhost:60502/api/iobroker/zwave2.0.Node_003.Multilevel_Sensor.humidity
         //        http://iobrokerdatacollector.prod-system.192.168.2.114.xip.io/api/iobroker/zwave2.0.Node_003.Multilevel_Sensor.humidity
         //private static string IOBrokerDataCollectorAddress = "http://iobrokerdatacollector.prod-system.192.168.2.114.xip.io/api/iobroker/";
-        private static string KellerHumObject = "zwave2.0.Node_003.Multilevel_Sensor.humidity";
+        private static string KellerHumObject = "zwave2.0.Node_003.Multilevel_Sensor.humidity"; 
 
         private static string EntfeuchterIstObject = "zwave2.0.Node_031.Binary_Switch.currentValue";
         private static string EntfeuchterZielObject = "zwave2.0.Node_031.Binary_Switch.targetValue";
 
         IOBrokerClusterConnector clusterConn;
+
 
         public SensorFeuchtigkeit KellerSensor;
         public Schalter Entfeuchter;
@@ -56,12 +58,20 @@ namespace SteuerungEntfeuchter
 
         public void Start()
         {
+            Console.WriteLine("Steuerung starten");
             clusterConn = new IOBrokerClusterConnector();
             KellerSensor = new SensorFeuchtigkeit(57,1,55);
            
 
             Entfeuchter = new Schalter();
-            
+
+
+            Console.WriteLine("JobManager initialisieren");
+            _jobManager = new JobManager();
+            _jobManager.Initialize();
+            Console.WriteLine("JobManager wurde initialisiert");
+            Console.WriteLine("Steuerung gestartet");
+
         }
 
         public void Stop()

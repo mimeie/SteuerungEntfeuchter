@@ -60,7 +60,7 @@ namespace SteuerungEntfeuchter
         {
             Console.WriteLine("Steuerung starten");
             clusterConn = new IOBrokerClusterConnector();
-            KellerSensor = new SensorFeuchtigkeit(57,1,55);
+            KellerSensor = new SensorFeuchtigkeit(62,1,59);
            
 
             Entfeuchter = new Schalter();

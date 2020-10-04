@@ -29,7 +29,8 @@ namespace SteuerungEntfeuchter.Controllers
             Console.WriteLine("getter");
             return new ResponseTrigger
             {
-                ReturnCode = 1               
+                ReturnCode = 1,
+                ReturnState = SteuerungLogic.Instance.CurrentState.ToString()
             };             
                         
         }

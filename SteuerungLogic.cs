@@ -113,7 +113,7 @@ namespace SteuerungEntfeuchter
         {
             Console.WriteLine("Steuerung starten");
             clusterConn = new IOBrokerClusterConnector();
-            KellerSensor = new SensorFeuchtigkeit(62,1,59);
+            KellerSensor = new SensorFeuchtigkeit(59,1,57);
            
 
             Entfeuchter = new Schalter();
@@ -272,6 +272,7 @@ namespace SteuerungEntfeuchter
             {
                 Console.WriteLine("status entfeuchter (laufend) und state machine stimmen nicht.");
                 ExecuteAction(Signal.GotoAus);
+                clusterConn.SetIOBrokerValue(EntfeuchterZielObject, false); //muss leider manuell gemacht werden da keine transition dafür
             }
 
             Console.WriteLine("Daten holen abgeschlossen");

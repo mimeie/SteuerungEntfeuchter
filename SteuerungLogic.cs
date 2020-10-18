@@ -22,9 +22,8 @@ namespace SteuerungEntfeuchter
 
         //        http://localhost:60502/api/iobroker/zwave2.0.Node_003.Multilevel_Sensor.humidity
         //        http://iobrokerdatacollector.prod-system.192.168.2.114.xip.io/api/iobroker/zwave2.0.Node_003.Multilevel_Sensor.humidity
-     
 
-        IOBrokerClusterConnector clusterConn;
+               
 
 
         public SensorFeuchtigkeit KellerSensor;
@@ -78,7 +77,7 @@ namespace SteuerungEntfeuchter
         public void Start()
         {
             Console.WriteLine("Steuerung starten");
-            clusterConn = new IOBrokerClusterConnector();
+            
             KellerSensor = new SensorFeuchtigkeit("zwave2.0.Node_003.Multilevel_Sensor.humidity",59,1,57);
            
 
@@ -104,7 +103,7 @@ namespace SteuerungEntfeuchter
             KellerSensor.LimitHighTime = DateTime.MinValue;
             if (Entfeuchter.Status == true)
             {
-                clusterConn.SetIOBrokerValue(Entfeuchter.ZielObjektId, false);
+                Entfeuchter.ZielStatus=true;                
             }
             else
             {
@@ -130,7 +129,7 @@ namespace SteuerungEntfeuchter
             if (KellerSensor.LimitHighTime < DateTime.Now && KellerSensor.LimitHighTime != DateTime.MinValue)
             {
                 Console.WriteLine("Entfeuchter einschalten");
-                clusterConn.SetIOBrokerValue(Entfeuchter.ZielObjektId, true);
+                Entfeuchter.ZielStatus=true;                
             }
             else
             {
@@ -148,23 +147,9 @@ namespace SteuerungEntfeuchter
         {
             Console.WriteLine("Neue Daten getriggert");
             //Daten updaten
-
-            IOBrokerJSONGet jsonResultKellerHum = clusterConn.GetIOBrokerValue(KellerSensor.ObjektId);
-            IOBrokerJSONGet jsonResultEntfeuchter = clusterConn.GetIOBrokerValue(Entfeuchter.ObjektId);
-
-            if (jsonResultKellerHum == null)
-            {
-                Console.WriteLine("keine Daten jsonResultKellerHum");
-                return;
-            }
-            if (jsonResultEntfeuchter == null)
-            {
-                Console.WriteLine("keine Daten jsonResultEntfeuchter");
-                return;
-            }
-           
-            KellerSensor.Feuchtigkeit = jsonResultKellerHum.valInt.Value;            
-            Entfeuchter.Status = jsonResultEntfeuchter.valBool.Value;
+                      
+            KellerSensor.Update();
+            Entfeuchter.Update();
 
             Console.WriteLine("feuchtigkeit wert / limit: " + KellerSensor.Feuchtigkeit.ToString() + " - " + KellerSensor.LimitHigh.ToString());
             Console.WriteLine("aktuelle Zeit / UTC Zeit: " + DateTime.Now.ToString() + " - " + DateTime.UtcNow.ToString());
@@ -174,7 +159,7 @@ namespace SteuerungEntfeuchter
             {
                 Console.WriteLine("status entfeuchter (laufend) und state machine stimmen nicht.");
                 StateMachine.ExecuteAction(Signal.GotoAus);
-                clusterConn.SetIOBrokerValue(Entfeuchter.ZielObjektId, false); //muss leider manuell gemacht werden da keine transition dafür
+                Entfeuchter.ZielStatus=false; //muss leider manuell gemacht werden da keine transition dafür
             }
 
             Console.WriteLine("Daten holen abgeschlossen");

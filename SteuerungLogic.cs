@@ -40,7 +40,7 @@ namespace SteuerungEntfeuchter
         
 
         private SteuerungLogic()
-         {
+        {
 
             //StateMachine init
             CurrentState = State.Aus;

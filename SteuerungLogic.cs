@@ -22,11 +22,7 @@ namespace SteuerungEntfeuchter
 
         //        http://localhost:60502/api/iobroker/zwave2.0.Node_003.Multilevel_Sensor.humidity
         //        http://iobrokerdatacollector.prod-system.192.168.2.114.xip.io/api/iobroker/zwave2.0.Node_003.Multilevel_Sensor.humidity
-        //private static string IOBrokerDataCollectorAddress = "http://iobrokerdatacollector.prod-system.192.168.2.114.xip.io/api/iobroker/";
-        private static string KellerHumObject = "zwave2.0.Node_003.Multilevel_Sensor.humidity"; 
-
-        private static string EntfeuchterIstObject = "zwave2.0.Node_031.Binary_Switch.currentValue";
-        private static string EntfeuchterZielObject = "zwave2.0.Node_031.Binary_Switch.targetValue";
+     
 
         IOBrokerClusterConnector clusterConn;
 
@@ -83,10 +79,10 @@ namespace SteuerungEntfeuchter
         {
             Console.WriteLine("Steuerung starten");
             clusterConn = new IOBrokerClusterConnector();
-            KellerSensor = new SensorFeuchtigkeit(59,1,57);
+            KellerSensor = new SensorFeuchtigkeit("zwave2.0.Node_003.Multilevel_Sensor.humidity",59,1,57);
            
 
-            Entfeuchter = new Schalter();
+            Entfeuchter = new Schalter("zwave2.0.Node_031.Binary_Switch.currentValue", "zwave2.0.Node_031.Binary_Switch.targetValue");
 
        
             Console.WriteLine("JobManager initialisieren");
@@ -108,7 +104,7 @@ namespace SteuerungEntfeuchter
             KellerSensor.LimitHighTime = DateTime.MinValue;
             if (Entfeuchter.Status == true)
             {
-                clusterConn.SetIOBrokerValue(EntfeuchterZielObject, false);
+                clusterConn.SetIOBrokerValue(Entfeuchter.ZielObjektId, false);
             }
             else
             {
@@ -134,7 +130,7 @@ namespace SteuerungEntfeuchter
             if (KellerSensor.LimitHighTime < DateTime.Now && KellerSensor.LimitHighTime != DateTime.MinValue)
             {
                 Console.WriteLine("Entfeuchter einschalten");
-                clusterConn.SetIOBrokerValue(EntfeuchterZielObject, true);
+                clusterConn.SetIOBrokerValue(Entfeuchter.ZielObjektId, true);
             }
             else
             {
@@ -148,77 +144,13 @@ namespace SteuerungEntfeuchter
 
         
 
-
-        //public void Update()
-        //{
-        //    Console.WriteLine("Neue Daten getriggert");
-        //    //Daten updaten
-
-        //    IOBrokerJSONGet jsonResultKellerHum = clusterConn.GetIOBrokerValue(KellerHumObject);
-        //    IOBrokerJSONGet jsonResultEntfeuchter = clusterConn.GetIOBrokerValue(EntfeuchterIstObject);
-
-        //    if (jsonResultKellerHum == null)
-        //    {
-        //        return;
-        //    }
-        //    if (jsonResultEntfeuchter == null)
-        //    {
-        //        return;
-        //    }
-
-        //    KellerSensor.Feuchtigkeit = jsonResultKellerHum.valInt.Value;
-        //    Entfeuchter.Status = jsonResultEntfeuchter.valBool.Value;
-
-        //    Console.WriteLine("feuchtigkeit wert / limit: " + KellerSensor.Feuchtigkeit.ToString() + " - " + KellerSensor.LimitHigh.ToString());
-        //    Console.WriteLine("aktuelle Zeit / UTC Zeit: " + DateTime.Now.ToString() + " - " + DateTime.UtcNow.ToString());
-        //    Console.WriteLine("limit high time: " + KellerSensor.LimitHighTime.ToString());
-        //    //feuchtigkeit überprüfen
-        //    if (KellerSensor.Feuchtigkeit > KellerSensor.LimitHigh)
-        //    {
-        //        //&& KellerSensor.LimitHighTime == DateTime.MinValue
-        //        Console.WriteLine("feuchtigkeit zu hoch: " + KellerSensor.Feuchtigkeit.ToString());
-
-        //        if (KellerSensor.LimitHighTime < DateTime.Now && KellerSensor.LimitHighTime != DateTime.MinValue)
-        //        {
-        //            //Entfeuchter einschalten
-        //            Console.WriteLine("Entfeuchter einschalten");
-        //            clusterConn.SetIOBrokerValue(EntfeuchterZielObject, true);
-        //        }
-        //        else
-        //        {
-        //            if (KellerSensor.LimitHighTime == DateTime.MinValue)
-        //            {
-        //                KellerSensor.LimitHighTime = DateTime.Now.AddHours(KellerSensor.LimitHighDelayHours);
-        //            }
-        //            Console.WriteLine("Entfeuchter nocht nicht einschalten, wegen Zeitlimit: " + KellerSensor.LimitHighTime.AddHours(KellerSensor.LimitHighDelayHours).ToString());
-        //        }
-        //    }
-        //    else
-        //    {
-        //        KellerSensor.LimitHighTime = DateTime.MinValue;
-        //        if (Entfeuchter.Status == true)
-        //        {
-        //            Console.WriteLine("Entfeuchter ausschalten");
-        //            clusterConn.SetIOBrokerValue(EntfeuchterZielObject, false);
-        //        }
-        //        else
-        //        {
-        //            Console.WriteLine("Entfeuchter ist schon aus");
-        //        }
-
-
-        //    }
-
-        //}
-
-
         public void Update()
         {
             Console.WriteLine("Neue Daten getriggert");
             //Daten updaten
 
-            IOBrokerJSONGet jsonResultKellerHum = clusterConn.GetIOBrokerValue(KellerHumObject);
-            IOBrokerJSONGet jsonResultEntfeuchter = clusterConn.GetIOBrokerValue(EntfeuchterIstObject);
+            IOBrokerJSONGet jsonResultKellerHum = clusterConn.GetIOBrokerValue(KellerSensor.ObjektId);
+            IOBrokerJSONGet jsonResultEntfeuchter = clusterConn.GetIOBrokerValue(Entfeuchter.ObjektId);
 
             if (jsonResultKellerHum == null)
             {
@@ -242,7 +174,7 @@ namespace SteuerungEntfeuchter
             {
                 Console.WriteLine("status entfeuchter (laufend) und state machine stimmen nicht.");
                 StateMachine.ExecuteAction(Signal.GotoAus);
-                clusterConn.SetIOBrokerValue(EntfeuchterZielObject, false); //muss leider manuell gemacht werden da keine transition dafür
+                clusterConn.SetIOBrokerValue(Entfeuchter.ZielObjektId, false); //muss leider manuell gemacht werden da keine transition dafür
             }
 
             Console.WriteLine("Daten holen abgeschlossen");

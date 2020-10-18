@@ -30,7 +30,7 @@ namespace SteuerungEntfeuchter.Controllers
             return new ResponseTrigger
             {
                 ReturnCode = 1,
-                ReturnState = SteuerungLogic.Instance.CurrentState.ToString()
+                ReturnState = SteuerungLogic.Instance.StateMachine.CurrentState.ToString()
             };             
                         
         }

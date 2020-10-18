@@ -13,11 +13,8 @@ namespace SteuerungEntfeuchter
 {
     public sealed class SteuerungLogic
     {
-        //für die state machine
-        private static readonly object SyncLock = new object();
-        private readonly List<StatesTransition> _transitions;
-
-
+        public StateMachineLogic StateMachine;
+        
         //aufruf: http://steuerungentfeuchter.prod.j1/triggerresponse
         private static volatile SteuerungLogic _instance;
         private static object _syncRoot = new object();
@@ -41,18 +38,22 @@ namespace SteuerungEntfeuchter
 
         private SteuerungLogic()
         {
+            StateMachine = new StateMachineLogic();
 
             //StateMachine init
-            CurrentState = State.Aus;
-            _transitions = new List<StatesTransition>();
+            StateMachine.CurrentState = State.Aus;
 
-            _transitions.Add(new StatesTransition(State.Aus, Signal.GotoWaitForEntfeuchten, GotoStateWaitForEntfeuchten, State.WaitForEntfeuchten));
 
-            _transitions.Add(new StatesTransition(State.WaitForEntfeuchten, Signal.GotoAus, GotoStateAus, State.Aus));
-            _transitions.Add(new StatesTransition(State.WaitForEntfeuchten, Signal.GotoEntfeuchten, GotoStateEntfeuchten, State.Entfeuchten));
+            StateMachine._transitions.Add(new StatesTransition(State.Aus, Signal.GotoWaitForEntfeuchten, GotoStateWaitForEntfeuchten, State.WaitForEntfeuchten));
 
-            _transitions.Add(new StatesTransition(State.Entfeuchten, Signal.GotoAus, GotoStateAus, State.Aus));
-            _transitions.Add(new StatesTransition(State.Entfeuchten, Signal.GotoWaitForEntfeuchten, GotoStateWaitForEntfeuchten, State.WaitForEntfeuchten));
+            StateMachine._transitions.Add(new StatesTransition(State.WaitForEntfeuchten, Signal.GotoAus, GotoStateAus, State.Aus));
+            StateMachine._transitions.Add(new StatesTransition(State.WaitForEntfeuchten, Signal.GotoEntfeuchten, GotoStateEntfeuchten, State.Entfeuchten));
+
+            StateMachine._transitions.Add(new StatesTransition(State.Entfeuchten, Signal.GotoAus, GotoStateAus, State.Aus));
+            StateMachine._transitions.Add(new StatesTransition(State.Entfeuchten, Signal.GotoWaitForEntfeuchten, GotoStateWaitForEntfeuchten, State.WaitForEntfeuchten));
+
+           
+
         }
 
         public static SteuerungLogic Instance
@@ -74,40 +75,9 @@ namespace SteuerungEntfeuchter
             }
         }
 
+   
 
-        public void ExecuteAction(Signal signal)
-        {
-            lock (SyncLock)
-            {
-                foreach (var transition in _transitions)
-                {
-                    if (transition.GetHashCode() == (CurrentState.ToString().GetHashCode() ^ signal.ToString().GetHashCode()))
-                    {
-                        CurrentState = transition.TargetState;
-                        if (transition.TransitionDelegateMethod != null)
-                        {
-                            transition.TransitionDelegateMethod();
-                        }
-
-                        Console.WriteLine(String.Format("ChangeOfState - Signal: {0}, StartState: {1}, TargetState {2}.", transition.Signal, transition.StartState, transition.TargetState));
-                        return;
-                    }
-                }
-
-                Console.WriteLine(String.Format("WrongTransition - Signal: {0}, CurrentState: {1}.", signal, CurrentState));
-            }
-        }
-
-        /// <summary>
-        /// Gets the state of the current.
-        /// </summary>
-        public State CurrentState { get; private set; }
-
-
-        /// <summary>
-        /// Gets a value indicating whether [first contactiong done].
-        /// </summary>
-        public bool FirstContactiongDone { get; private set; }
+        
 
         public void Start()
         {
@@ -169,7 +139,7 @@ namespace SteuerungEntfeuchter
             else
             {
                 Console.WriteLine("wert noch nicht über zeitlimit");
-                ExecuteAction(Signal.GotoWaitForEntfeuchten);
+                StateMachine.ExecuteAction(Signal.GotoWaitForEntfeuchten);
             }
             //Entfeuchter einschalten
           
@@ -268,10 +238,10 @@ namespace SteuerungEntfeuchter
             Console.WriteLine("aktuelle Zeit / UTC Zeit: " + DateTime.Now.ToString() + " - " + DateTime.UtcNow.ToString());
             Console.WriteLine("limit high time: " + KellerSensor.LimitHighTime.ToString());
 
-            if (Entfeuchter.Status == true && CurrentState != State.Entfeuchten)
+            if (Entfeuchter.Status == true && StateMachine.CurrentState != State.Entfeuchten)
             {
                 Console.WriteLine("status entfeuchter (laufend) und state machine stimmen nicht.");
-                ExecuteAction(Signal.GotoAus);
+                StateMachine.ExecuteAction(Signal.GotoAus);
                 clusterConn.SetIOBrokerValue(EntfeuchterZielObject, false); //muss leider manuell gemacht werden da keine transition dafür
             }
 
@@ -280,18 +250,18 @@ namespace SteuerungEntfeuchter
             //feuchtigkeit überprüfen
             if (KellerSensor.Feuchtigkeit > KellerSensor.LimitHigh )
             {  
-                if (CurrentState == State.Aus)
-                { 
-                    ExecuteAction(Signal.GotoWaitForEntfeuchten);
-                }
-                else if (CurrentState == State.WaitForEntfeuchten)
+                if (StateMachine.CurrentState == State.Aus)
                 {
-                    ExecuteAction(Signal.GotoEntfeuchten);
+                    StateMachine.ExecuteAction(Signal.GotoWaitForEntfeuchten);
+                }
+                else if (StateMachine.CurrentState == State.WaitForEntfeuchten)
+                {
+                    StateMachine.ExecuteAction(Signal.GotoEntfeuchten);
                 }
             }
             else
             {
-                ExecuteAction(Signal.GotoAus);     
+                StateMachine.ExecuteAction(Signal.GotoAus);     
             }
 
         }

@@ -39,13 +39,13 @@ namespace SteuerungEntfeuchter
             StateMachine.CurrentState = State.Aus;
 
 
-            StateMachine._transitions.Add(new StatesTransition(State.Aus, Signal.GotoWaitForEntfeuchten, GotoStateWaitForEntfeuchten, State.WaitForEntfeuchten));
+            StateMachine._transitions.Add(new StatesTransition(State.Aus, Signal.GotoWaitForAction, GotoStateWaitForAction, State.WaitForAction));
 
-            StateMachine._transitions.Add(new StatesTransition(State.WaitForEntfeuchten, Signal.GotoAus, GotoStateAus, State.Aus));
-            StateMachine._transitions.Add(new StatesTransition(State.WaitForEntfeuchten, Signal.GotoEntfeuchten, GotoStateEntfeuchten, State.Entfeuchten));
+            StateMachine._transitions.Add(new StatesTransition(State.WaitForAction, Signal.GotoAus, GotoStateAus, State.Aus));
+            StateMachine._transitions.Add(new StatesTransition(State.WaitForAction, Signal.GotoAction, GotoStateAction, State.Action));
 
-            StateMachine._transitions.Add(new StatesTransition(State.Entfeuchten, Signal.GotoAus, GotoStateAus, State.Aus));
-            StateMachine._transitions.Add(new StatesTransition(State.Entfeuchten, Signal.GotoWaitForEntfeuchten, GotoStateWaitForEntfeuchten, State.WaitForEntfeuchten));
+            StateMachine._transitions.Add(new StatesTransition(State.Action, Signal.GotoAus, GotoStateAus, State.Aus));
+            StateMachine._transitions.Add(new StatesTransition(State.Action, Signal.GotoWaitForAction, GotoStateWaitForAction, State.WaitForAction));
 
            
 
@@ -110,7 +110,7 @@ namespace SteuerungEntfeuchter
                 Console.WriteLine("Entfeuchter ist schon aus");
             }            
         }
-        private void GotoStateWaitForEntfeuchten()
+        private void GotoStateWaitForAction()
         {
             Console.WriteLine("Executed: GotoStateWaitForEntfeuchten");
 
@@ -121,22 +121,16 @@ namespace SteuerungEntfeuchter
             Console.WriteLine("Entfeuchter nocht nicht einschalten, wegen Zeitlimit: " + KellerSensor.LimitHighTime.AddHours(KellerSensor.LimitHighDelayHours).ToString());
         }
 
-        private void GotoStateEntfeuchten()
+        private void GotoStateAction()
         {
             Console.WriteLine("Executed: GotoStateEntfeuchten");
             Console.WriteLine("feuchtigkeit zu hoch (versuche zu entfeuchten): " + KellerSensor.Feuchtigkeit.ToString());
 
-            if (KellerSensor.LimitHighTime < DateTime.Now && KellerSensor.LimitHighTime != DateTime.MinValue)
-            {
-                Console.WriteLine("Entfeuchter einschalten");
-                Entfeuchter.ZielStatus=true;                
-            }
-            else
-            {
-                Console.WriteLine("wert noch nicht über zeitlimit");
-                StateMachine.ExecuteAction(Signal.GotoWaitForEntfeuchten);
-            }
             //Entfeuchter einschalten
+            Entfeuchter.ZielStatus = true;
+
+            
+            
           
             
         }
@@ -155,7 +149,7 @@ namespace SteuerungEntfeuchter
             Console.WriteLine("aktuelle Zeit / UTC Zeit: " + DateTime.Now.ToString() + " - " + DateTime.UtcNow.ToString());
             Console.WriteLine("limit high time: " + KellerSensor.LimitHighTime.ToString());
 
-            if (Entfeuchter.Status == true && StateMachine.CurrentState != State.Entfeuchten)
+            if (Entfeuchter.Status == true && StateMachine.CurrentState != State.Action)
             {
                 Console.WriteLine("status entfeuchter (laufend) und state machine stimmen nicht.");
                 StateMachine.ExecuteAction(Signal.GotoAus);
@@ -164,16 +158,26 @@ namespace SteuerungEntfeuchter
 
             Console.WriteLine("Daten holen abgeschlossen");
 
+
             //feuchtigkeit überprüfen
             if (KellerSensor.Feuchtigkeit > KellerSensor.LimitHigh )
             {  
                 if (StateMachine.CurrentState == State.Aus)
                 {
-                    StateMachine.ExecuteAction(Signal.GotoWaitForEntfeuchten);
+                    StateMachine.ExecuteAction(Signal.GotoWaitForAction);
                 }
-                else if (StateMachine.CurrentState == State.WaitForEntfeuchten)
+                else if (StateMachine.CurrentState == State.WaitForAction)
                 {
-                    StateMachine.ExecuteAction(Signal.GotoEntfeuchten);
+                    if (KellerSensor.LimitHighTime < DateTime.Now && KellerSensor.LimitHighTime != DateTime.MinValue)
+                    {
+                        Console.WriteLine("Entfeuchter einschalten");
+                        StateMachine.ExecuteAction(Signal.GotoAction);
+                    }
+                    else
+                    {
+                        Console.WriteLine("wert noch nicht über zeitlimit");
+                        //StateMachine.ExecuteAction(Signal.GotoWaitForAction);
+                    }                    
                 }
             }
             else

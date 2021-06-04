@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Net;
 
 using Newtonsoft.Json;
+using NLog;
 using JusiBase;
 //Update-Package
 
@@ -33,6 +34,23 @@ namespace SteuerungEntfeuchter
 
         private SteuerungLogic()
         {
+            //nlog versuche:
+            var config = new NLog.Config.LoggingConfiguration();
+
+            // Targets where to log to: Console
+            var logconsole = new NLog.Targets.ConsoleTarget("logconsole");
+
+            // Rules for mapping loggers to targets
+            config.AddRule(LogLevel.Info, LogLevel.Fatal, logconsole);
+
+            // Apply config
+            NLog.LogManager.Configuration = config;
+
+
+            var logger = NLog.LogManager.GetCurrentClassLogger();
+            logger.Info("hello steuerungentfeuchter");
+
+
             StateMachine = new StateMachineLogic();
 
             //StateMachine init

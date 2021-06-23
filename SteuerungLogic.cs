@@ -48,7 +48,7 @@ namespace SteuerungEntfeuchter
 
 
             var logger = NLog.LogManager.GetCurrentClassLogger();
-            logger.Info("hello steuerungentfeuchter");
+            logger.Info("hello steuerungentfeuchter 2");
 
 
             StateMachine = new StateMachineLogic();
